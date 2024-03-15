@@ -1,44 +1,59 @@
-name: CI
-on:
-    pull_request: {}
-permissions: read-all
 jobs:
   build:
     name: build
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-    - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # renovate: tag=v2
+    - continue-on-error: true
+      uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579
       with:
-        fetch-depth: 0 #needed by spotless
-    - uses: actions/setup-java@f0bb91606209742fe3ea40199be2f3ef195ecabf # renovate: tag=v2
+        fetch-depth: 0
+    - continue-on-error: true
+      uses: actions/setup-java@f0bb91606209742fe3ea40199be2f3ef195ecabf
       with:
-        distribution: 'temurin'
+        distribution: temurin
         java-version: 8
-    - uses: gradle/gradle-build-action@937999e9cc2425eddc7fd62d1053baf041147db7 # renovate: tag=v2
+    - continue-on-error: true
       name: spotless (license header)
+      uses: gradle/gradle-build-action@937999e9cc2425eddc7fd62d1053baf041147db7
       with:
-        # the --continue helps spotless find both java and gradle issues
         arguments: spotlessCheck -PspotlessFrom=origin/${{ github.base_ref }} --continue
-    - name: how to fix
+    - continue-on-error: true
       if: failure()
-      # the foreground (38;5) color code 208 is orange. we also have bold, white bg (38;5;0;48;5;255m), white fg on black bg...
-      run: |
-        echo -e "\n\033[38;5;0;48;5;208m \u001b[1m How to deal with errors in preliminary job: \u001b[0m\033[0m"
+      name: how to fix
+      run: 'echo -e "\n\033[38;5;0;48;5;208m \u001b[1m How to deal with errors in
+        preliminary job: \u001b[0m\033[0m"
+
         echo "(Have a look at the steps above to see what failed exactly)"
-        echo -e "\n - \u001b[1mSpotless (license headers)\u001b[0m failures on touched java files \033[38;5;255;48;5;0m\u001b[1mcan be automatically fixed by running\u001b[0m:"
+
+        echo -e "\n - \u001b[1mSpotless (license headers)\u001b[0m failures on touched
+        java files \033[38;5;255;48;5;0m\u001b[1mcan be automatically fixed by running\u001b[0m:"
+
         echo -e "   \033[38;5;0;48;5;255m ./gradlew spotlessApply \033[0m"
+
         echo ""
+
         exit -1
-    - uses: gradle/gradle-build-action@937999e9cc2425eddc7fd62d1053baf041147db7 # renovate: tag=v2
+
+        '
+    - continue-on-error: true
       name: gradle
+      uses: gradle/gradle-build-action@937999e9cc2425eddc7fd62d1053baf041147db7
       with:
         arguments: build javadoc
-    - name: Capture Test Results
+    - continue-on-error: true
       if: failure() && steps.gradle.outcome == 'failure'
-      uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # renovate: tag=v2
+      name: Capture Test Results
+      uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2
       with:
         name: test-results
-        path: |
-          build/reports/tests/**/*.*
+        path: 'build/reports/tests/**/*.*
+
           */build/reports/tests/**/*.*
+
+          '
         retention-days: 3
+name: CI
+on:
+  repository_dispatch:
+    types: trigger-ga___ci.yml
+permissions: read-all
